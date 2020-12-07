@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,14 +10,13 @@ import (
 )
 
 func checkDeleted(d *schema.ResourceData, err error) error {
-	switch e := err.(type) {
-	case rabbithole.ErrorResponse:
-		if e.StatusCode == 404 {
+	var errorResponse *rabbithole.ErrorResponse
+	if errors.As(err, &errorResponse) {
+		if errorResponse.StatusCode == 404 {
 			d.SetId("")
 			return nil
 		}
 	}
-
 	return err
 }
 
