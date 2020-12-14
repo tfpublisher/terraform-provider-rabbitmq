@@ -10,7 +10,7 @@ import (
 )
 
 func checkDeleted(d *schema.ResourceData, err error) error {
-	var errorResponse *rabbithole.ErrorResponse
+	var errorResponse rabbithole.ErrorResponse
 	if errors.As(err, &errorResponse) {
 		if errorResponse.StatusCode == 404 {
 			d.SetId("")
