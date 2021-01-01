@@ -26,7 +26,6 @@ install:
 script:
 - make test
 - make vet
-- make website-test
 - docker-compose -f $(pwd)/scripts/docker-compose.yml up -d
 - $(pwd)/scripts/wait-rabbitmq-docker.sh
 - make testacc
