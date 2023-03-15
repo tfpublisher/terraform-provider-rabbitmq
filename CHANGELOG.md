@@ -1,3 +1,16 @@
+## 1.8.0 (March 15, 2023)
+
+FEATURES:
+
+* Support for RabbitMq versions 3.9 and 3.10 - @mryan43 
+  ([#40](https://github.com/cyrilgdn/terraform-provider-rabbitmq/pull/40))
+
+FIX: 
+* `rabbitmq_federation`: Fix problematic default `message_ttl` - @ahmadalli
+  ([#47](https://github.com/cyrilgdn/terraform-provider-rabbitmq/pull/47))
+* `rabbitmq_binding`: Get only bindings related to source/destination to be faster - @avitsidis 
+  ([#43](https://github.com/cyrilgdn/terraform-provider-rabbitmq/pull/43))
+
 ## 1.7.0 (August 20, 2022)
 
 FEATURES:
