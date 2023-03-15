@@ -3,7 +3,6 @@ package rabbitmq
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	rabbithole "github.com/michaelklishin/rabbit-hole/v2"
 
@@ -13,6 +12,7 @@ import (
 func resourceShovel() *schema.Resource {
 	return &schema.Resource{
 		Create: CreateShovel,
+		Update: UpdateShovel,
 		Read:   ReadShovel,
 		Delete: DeleteShovel,
 		Importer: &schema.ResourceImporter{
@@ -33,7 +33,6 @@ func resourceShovel() *schema.Resource {
 			"info": {
 				Type:     schema.TypeList,
 				Required: true,
-				ForceNew: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -232,10 +231,10 @@ func CreateShovel(d *schema.ResourceData, meta interface{}) error {
 func ReadShovel(d *schema.ResourceData, meta interface{}) error {
 	rmqc := meta.(*rabbithole.Client)
 
-	shovelId := strings.Split(d.Id(), "@")
-
-	name := shovelId[0]
-	vhost := shovelId[1]
+	name, vhost, err := parseResourceId(d)
+	if err != nil {
+		return err
+	}
 
 	shovelInfo, err := rmqc.GetShovel(vhost, name)
 	if err != nil {
@@ -281,13 +280,42 @@ func ReadShovel(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
+func UpdateShovel(d *schema.ResourceData, meta interface{}) error {
+	rmqc := meta.(*rabbithole.Client)
+
+	name, vhost, err := parseResourceId(d)
+	if err != nil {
+		return err
+	}
+
+	if d.HasChange("info") {
+		_, newShovel := d.GetChange("info")
+
+		newShovelList := newShovel.([]interface{})
+		infoMap, ok := newShovelList[0].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("Unable to parse shovel info")
+		}
+
+		shovelDefinition := setShovelDefinition(infoMap).(rabbithole.ShovelDefinition)
+
+		log.Printf("[DEBUG] RabbitMQ: Attempting to declare shovel %s in vhost %s", name, vhost)
+		resp, err := rmqc.DeclareShovel(vhost, name, shovelDefinition)
+		log.Printf("[DEBUG] RabbitMQ: shovel declartion response: %#v", resp)
+		if err != nil {
+			return err
+		}
+	}
+	return ReadShovel(d, meta)
+}
+
 func DeleteShovel(d *schema.ResourceData, meta interface{}) error {
 	rmqc := meta.(*rabbithole.Client)
 
-	shovelId := strings.Split(d.Id(), "@")
-
-	name := shovelId[0]
-	vhost := shovelId[1]
+	name, vhost, err := parseResourceId(d)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("[DEBUG] RabbitMQ: Attempting to delete shovel %s", d.Id())
 
